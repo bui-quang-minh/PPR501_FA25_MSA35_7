@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from models.student import Student
 from database.db_manager import DatabaseManager
+from controllers.main_controller import MainController
 from utils.validators import Validator
-from utils.csv_handler import CSVHandler
 
 
 class MainWindow:
@@ -14,19 +14,18 @@ class MainWindow:
 
         self.db_manager = DatabaseManager()
         self.validator = Validator()
+        self.main_controller = MainController()
 
         self.create_widgets()
-        self.load_students()
+        self.main_controller.load_students()
 
     def create_widgets(self):
-        """Create all GUI widgets"""
         self.create_header()
         self.create_button_frame()
         self.create_input_frame()
         self.create_table_frame()
 
     def create_header(self):
-        """Create header section"""
         top_frame = tk.Frame(self.root, bg='#2c3e50', pady=10)
         top_frame.pack(fill=tk.X)
 
@@ -38,12 +37,12 @@ class MainWindow:
         btn_frame.pack(fill=tk.X)
 
         buttons = [
-            ("Add Student", self.add_student, '#27ae60'),
-            ("Update Student", self.update_student, '#2980b9'),
-            ("Delete Student", self.delete_student, '#c0392b'),
-            ("Import CSV", self.import_csv, '#8e44ad'),
-            ("Export CSV", self.export_csv, '#16a085'),
-            ("Refresh", self.load_students, '#34495e'),
+            ("Add Student", self.main_controller.add_student, '#27ae60'),
+            ("Update Student", self.main_controller.update_student, '#2980b9'),
+            ("Delete Student", self.main_controller.delete_student, '#c0392b'),
+            ("Import CSV", self.main_controller.import_csv, '#8e44ad'),
+            ("Export CSV", self.main_controller.export_csv, '#16a085'),
+            ("Refresh", self.main_controller.load_students, '#34495e'),
         ]
 
         for text, command, color in buttons:
@@ -51,11 +50,11 @@ class MainWindow:
                       bg=color, fg='white', padx=15, pady=5).pack(side=tk.LEFT, padx=5)
 
         tk.Label(btn_frame, text="Search:", font=('Arial', 10)).pack(side=tk.LEFT, padx=(20, 5))
-        self.search_entry = tk.Entry(btn_frame, width=30)
-        self.search_entry.pack(side=tk.LEFT, padx=5)
-        self.search_entry.bind('<Return>', lambda e: self.search_students())
+        self.main_controller.search_entry = tk.Entry(btn_frame, width=30)
+        self.main_controller.search_entry.pack(side=tk.LEFT, padx=5)
+        self.main_controller.search_entry.bind('<Return>', lambda e: self.main_controller.search_students())
 
-        tk.Button(btn_frame, text="Clear", command=self.clear_search,
+        tk.Button(btn_frame, text="Clear", command=self.main_controller.clear_search,
                   bg='#7f8c8d', fg='white', padx=10, pady=5).pack(side=tk.LEFT, padx=5)
 
     def create_input_frame(self):
@@ -106,14 +105,6 @@ class MainWindow:
 
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.tree.bind('<<TreeviewSelect>>', self.on_select)
-
-    def load_students(self):
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
-        students = self.db_manager.get_all_students()
-        for student in students:
-            self.tree.insert('', tk.END, values=student.to_tuple())
 
     def on_select(self, event):
         selected = self.tree.selection()
@@ -184,110 +175,6 @@ class MainWindow:
                 'Literature Grade'].get().strip() else None,
             float(self.entries['English Grade'].get().strip()) if self.entries['English Grade'].get().strip() else None
         )
-
-    def add_student(self):
-        if not self.validate_inputs():
-            return
-
-        try:
-            student = self.get_student_from_inputs()
-            self.db_manager.add_student(student)
-            self.load_students()
-            self.clear_entries()
-            messagebox.showinfo("Success", "Student added successfully")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to add student: {str(e)}")
-
-    def update_student(self):
-        if not self.validate_inputs():
-            return
-
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showerror("Error", "Please select a student to update")
-            return
-
-        try:
-            student = self.get_student_from_inputs()
-            self.db_manager.update_student(student)
-            self.load_students()
-            self.clear_entries()
-            messagebox.showinfo("Success", "Student updated successfully")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to update student: {str(e)}")
-
-    def delete_student(self):
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showerror("Error", "Please select a student to delete")
-            return
-
-        if messagebox.askyesno("Confirm", "Are you sure you want to delete this student?"):
-            try:
-                item = self.tree.item(selected[0])
-                student_id = item['values'][0]
-
-                self.db_manager.delete_student(student_id)
-                self.load_students()
-                self.clear_entries()
-                messagebox.showinfo("Success", "Student deleted successfully")
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete student: {str(e)}")
-
-    def import_csv(self):
-        filename = filedialog.askopenfilename(
-            title="Select CSV file",
-            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-        )
-
-        if not filename:
-            return
-
-        try:
-            students = CSVHandler.import_from_csv(filename)
-            self.db_manager.import_students(students)
-            self.load_students()
-            messagebox.showinfo("Success", f"Imported {len(students)} students successfully")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to import CSV: {str(e)}")
-
-    def export_csv(self):
-        filename = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-        )
-
-        if not filename:
-            return
-
-        try:
-            students = self.db_manager.get_all_students()
-            CSVHandler.export_to_csv(filename, students)
-            messagebox.showinfo("Success", f"Exported {len(students)} students successfully")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to export CSV: {str(e)}")
-
-    def search_students(self):
-        search_term = self.search_entry.get().strip().lower()
-
-        if not search_term:
-            self.load_students()
-            return
-
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
-        students = self.db_manager.get_all_students()
-        for student in students:
-            student_id = str(student.student_id).lower()
-            full_name = f"{student.lastname} {student.firstname}".lower()
-
-            if search_term in student_id or search_term in full_name:
-                self.tree.insert('', tk.END, values=student.to_tuple())
-
-    def clear_search(self):
-        self.search_entry.delete(0, tk.END)
-        self.load_students()
 
     def __del__(self):
         if hasattr(self, 'db_manager'):

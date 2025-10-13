@@ -1,79 +1,67 @@
-import sqlite3
-from models.student import Student
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
+from models.student import Student, Base
 
 
 class DatabaseManager:
     def __init__(self, db_name='students.db'):
         self.db_name = db_name
-        self.conn = None
-        self.cursor = None
-        self.connect()
+        self.engine = create_engine(f'sqlite:///{db_name}')
+        self.Session = scoped_session(sessionmaker(bind=self.engine))
+        self.session = None
         self.create_table()
 
-    def connect(self):
-        self.conn = sqlite3.connect(self.db_name)
-        self.cursor = self.conn.cursor()
-
     def create_table(self):
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS students (
-                student_id TEXT PRIMARY KEY,
-                lastname TEXT NOT NULL,
-                firstname TEXT NOT NULL,
-                dob TEXT NOT NULL,
-                address TEXT NOT NULL,
-                math_grade REAL,
-                literature_grade REAL,
-                english_grade REAL
-            )
-        ''')
-        self.conn.commit()
+        Base.metadata.create_all(self.engine)
+
+    def get_session(self):
+        if self.session is None:
+            self.session = self.Session()
+        return self.session
 
     def add_student(self, student):
-        self.cursor.execute('''
-            INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', student.to_tuple())
-        self.conn.commit()
+        session = self.get_session()
+        session.add(student)
+        session.commit()
 
     def get_all_students(self):
-        self.cursor.execute('SELECT * FROM students ORDER BY student_id')
-        rows = self.cursor.fetchall()
-        return [Student.from_tuple(row) for row in rows]
+        session = self.get_session()
+        return session.query(Student).order_by(Student.student_id).all()
 
     def get_student_by_id(self, student_id):
-        self.cursor.execute('SELECT * FROM students WHERE student_id=?', (student_id,))
-        row = self.cursor.fetchone()
-        return Student.from_tuple(row) if row else None
+        session = self.get_session()
+        return session.query(Student).filter(Student.student_id == student_id).first()
 
     def update_student(self, student):
-        self.cursor.execute('''
-            UPDATE students SET 
-                lastname=?, firstname=?, dob=?, address=?, 
-                math_grade=?, literature_grade=?, english_grade=?
-            WHERE student_id=?
-        ''', (
-            student.lastname,
-            student.firstname,
-            student.dob,
-            student.address,
-            student.math_grade,
-            student.literature_grade,
-            student.english_grade,
-            student.student_id
-        ))
-        self.conn.commit()
+        session = self.get_session()
+        existing_student = session.query(Student).filter(
+            Student.student_id == student.student_id
+        ).first()
+
+        if existing_student:
+            existing_student.lastname = student.lastname
+            existing_student.firstname = student.firstname
+            existing_student.dob = student.dob
+            existing_student.address = student.address
+            existing_student.math_grade = student.math_grade
+            existing_student.literature_grade = student.literature_grade
+            existing_student.english_grade = student.english_grade
+            session.commit()
 
     def delete_student(self, student_id):
-        self.cursor.execute('DELETE FROM students WHERE student_id=?', (student_id,))
-        self.conn.commit()
+        session = self.get_session()
+        student = session.query(Student).filter(Student.student_id == student_id).first()
+        if student:
+            session.delete(student)
+            session.commit()
 
     def import_students(self, students):
+        session = self.get_session()
         for student in students:
-            self.cursor.execute('''
-                INSERT OR REPLACE INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', student.to_tuple())
-        self.conn.commit()
+            session.merge(student)
+        session.commit()
 
     def close(self):
-        if self.conn:
-            self.conn.close()
+        if self.session:
+            self.session.close()
+        self.Session.remove()
