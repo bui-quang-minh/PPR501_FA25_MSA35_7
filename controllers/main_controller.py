@@ -1,17 +1,28 @@
 from utils.csv_handler import CSVHandler
 from tkinter import ttk, messagebox, filedialog
 import tkinter as tk
+from database.db_manager import DatabaseManager
+from utils.validators import Validator
+from views.main_window import MainWindow
 
 class MainController:
+    def __init__(self):
+        self.db_manager = DatabaseManager()
+        self.validator = Validator()
+        self.main_window = MainWindow()
+        self.tree = None
+        self.entries = {}
+        self.search_entry = None
+
     def add_student(self):
-        if not self.validate_inputs():
+        if not self.main_window.validate_inputs():
             return
 
         try:
-            student = self.get_student_from_inputs()
+            student = self.main_window.get_student_from_inputs()
             self.db_manager.add_student(student)
             self.load_students()
-            self.clear_entries()
+            self.main_window.clear_entries()
             messagebox.showinfo("Success", "Student added successfully")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to add student: {str(e)}")

@@ -60,6 +60,11 @@ class DatabaseManager:
         for student in students:
             session.merge(student)
         session.commit()
+    def get_top_n_students(self, n=5):
+        session = self.get_session()
+        return session.query(Student).order_by(
+            ((Student.math_grade + Student.literature_grade + Student.english_grade) / 3).desc()
+        ).limit(n).all()
 
     def close(self):
         if self.session:
