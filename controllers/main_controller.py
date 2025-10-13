@@ -3,13 +3,12 @@ from tkinter import ttk, messagebox, filedialog
 import tkinter as tk
 from database.db_manager import DatabaseManager
 from utils.validators import Validator
-from views.main_window import MainWindow
 
 class MainController:
-    def __init__(self):
+    def __init__(self, main_window=None):
         self.db_manager = DatabaseManager()
         self.validator = Validator()
-        self.main_window = MainWindow()
+        self.main_window = main_window
         self.tree = None
         self.entries = {}
         self.search_entry = None
@@ -29,7 +28,7 @@ class MainController:
 
 
     def update_student(self):
-        if not self.validate_inputs():
+        if not self.main_window.validate_inputs():
             return
 
         selected = self.tree.selection()
@@ -38,10 +37,10 @@ class MainController:
             return
 
         try:
-            student = self.get_student_from_inputs()
+            student = self.main_window.get_student_from_inputs()
             self.db_manager.update_student(student)
             self.load_students()
-            self.clear_entries()
+            self.main_window.clear_entries()
             messagebox.showinfo("Success", "Student updated successfully")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update student: {str(e)}")
@@ -60,7 +59,7 @@ class MainController:
 
                 self.db_manager.delete_student(student_id)
                 self.load_students()
-                self.clear_entries()
+                self.main_window.clear_entries()
                 messagebox.showinfo("Success", "Student deleted successfully")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to delete student: {str(e)}")
@@ -131,3 +130,33 @@ class MainController:
         students = self.db_manager.get_all_students()
         for student in students:
             self.tree.insert('', tk.END, values=student.to_tuple())
+
+    def on_tree_select(self, event):
+        """Handle tree selection event to populate input fields"""
+        selected = self.tree.selection()
+        if not selected:
+            return
+
+        item = self.tree.item(selected[0])
+        values = item['values']
+
+        # Populate the form fields in main_window with selected student data
+        self.main_window.populate_fields(values)
+
+    def setup_ui_references(self, tree, search_entry):
+        """Set up references to UI components from main_window"""
+        self.tree = tree
+        self.search_entry = search_entry
+
+    def set_main_window(self, main_window):
+        """Set the main window reference"""
+        self.main_window = main_window
+
+    def get_top_students(self, n=5):
+        """Get top N students by average grade"""
+        try:
+            students = self.db_manager.get_top_n_students(n)
+            return students
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to get top students: {str(e)}")
+            return []

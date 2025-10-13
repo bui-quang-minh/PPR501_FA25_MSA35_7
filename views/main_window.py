@@ -14,9 +14,10 @@ class MainWindow:
 
         self.db_manager = DatabaseManager()
         self.validator = Validator()
-        self.main_controller = MainController()
+        self.main_controller = MainController(self)
 
         self.create_widgets()
+        self.main_controller.tree = self.tree
         self.main_controller.load_students()
 
     def create_widgets(self):
