@@ -65,7 +65,7 @@ def get_students(top: Optional[int] = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/students")
+@app.get("/all_students")
 #getall
 def get_students():
     try:
