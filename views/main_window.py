@@ -143,7 +143,7 @@ class MainWindow:
             messagebox.showerror("Validation Error", msg)
             return False
 
-        dob = self.entries['DOB (YYYY-MM-DD)'].get().strip()
+        dob = self.entries['DOB (DD-MM-YYYY)'].get().strip()
         valid, msg = self.validator.validate_dob(dob)
         if not valid:
             messagebox.showerror("Validation Error", msg)

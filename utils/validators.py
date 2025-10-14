@@ -17,10 +17,10 @@ class Validator:
     @staticmethod
     def validate_dob(dob):
         try:
-            datetime.strptime(dob, '%Y-%m-%d')
+            datetime.strptime(dob, '%d-%m-%y')
             return True, ""
         except ValueError:
-            return False, "Date format must be YYYY-MM-DD"
+            return False, "Date format must be DD-MM-YYYY"
 
     @staticmethod
     def validate_grade(grade):
