@@ -132,7 +132,6 @@ class MainController:
             self.tree.insert('', tk.END, values=student.to_tuple())
 
     def on_tree_select(self, event):
-        """Handle tree selection event to populate input fields"""
         selected = self.tree.selection()
         if not selected:
             return
@@ -140,23 +139,12 @@ class MainController:
         item = self.tree.item(selected[0])
         values = item['values']
 
-        # Populate the form fields in main_window with selected student data
         self.main_window.populate_fields(values)
 
     def setup_ui_references(self, tree, search_entry):
-        """Set up references to UI components from main_window"""
         self.tree = tree
         self.search_entry = search_entry
 
     def set_main_window(self, main_window):
-        """Set the main window reference"""
         self.main_window = main_window
 
-    def get_top_students(self, n=5):
-        """Get top N students by average grade"""
-        try:
-            students = self.db_manager.get_top_n_students(n)
-            return students
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to get top students: {str(e)}")
-            return []
