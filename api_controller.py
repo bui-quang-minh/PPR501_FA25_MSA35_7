@@ -1,9 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import Response, FastAPI, HTTPException
 from database.db_manager import DatabaseManager
 from models.student import Student
 from pydantic import BaseModel, Field
 from typing import List, Optional
-
+from dicttoxml import dicttoxml
 
 API_URL = "http://127.0.0.1:8000"
 
@@ -61,7 +61,8 @@ def get_students(top: Optional[int] = None):
                 "english_grade": student.english_grade
             }
             result.append(student_dict)
-        return result
+        xml_data = dicttoxml(result, custom_root="students", attr_type=False)
+        return Response(content=xml_data, media_type="application/xml")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -83,7 +84,9 @@ def get_students():
                 "english_grade": student.english_grade
             }
             result.append(student_dict)
-        return result
+        xml_data = dicttoxml(result, custom_root="students", attr_type=False)
+        return Response(content=xml_data, media_type="application/xml")
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -105,7 +108,8 @@ def get_student(student_id: str):
             "english_grade": student.english_grade
         }
 
-        return student_dict
+        xml_data = dicttoxml(student_dict, custom_root="students", attr_type=False)
+        return Response(content=xml_data, media_type="application/xml")
     except HTTPException:
         raise
     except Exception as e:
@@ -177,39 +181,3 @@ def delete_student(student_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
-
-@app.get("/search", response_model=List[StudentResponse])
-def search_students(query: str):
-    try:
-        if not query or len(query.strip()) == 0:
-            raise HTTPException(status_code=400, detail="Search query cannot be empty")
-
-        students = db.get_all_students()
-        query_lower = query.lower().strip()
-        matching_students = []
-
-        for student in students:
-            if (query_lower in student.student_id.lower() or
-                query_lower in student.firstname.lower() or
-                query_lower in student.lastname.lower()):
-
-                student_dict = {
-                    "student_id": student.student_id,
-                    "lastname": student.lastname,
-                    "firstname": student.firstname,
-                    "dob": student.dob,
-                    "address": student.address,
-                    "math_grade": student.math_grade,
-                    "literature_grade": student.literature_grade,
-                    "english_grade": student.english_grade
-                }
-
-                matching_students.append(student_dict)
-
-        return matching_students
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
