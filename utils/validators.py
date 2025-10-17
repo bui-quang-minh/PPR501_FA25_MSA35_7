@@ -17,7 +17,7 @@ class Validator:
     @staticmethod
     def validate_dob(dob):
         try:
-            datetime.strptime(dob, '%d-%m-%y')
+            datetime.strptime(dob, '%d-%m-%Y')
             return True, ""
         except ValueError:
             return False, "Date format must be DD-MM-YYYY"

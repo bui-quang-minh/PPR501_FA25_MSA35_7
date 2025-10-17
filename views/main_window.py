@@ -63,7 +63,7 @@ class MainWindow:
                                     padx=10, pady=10)
         input_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        labels = ['Student ID', 'Last Name', 'First Name', 'DOB (YYYY-MM-DD)',
+        labels = ['Student ID', 'Last Name', 'First Name', 'DOB (DD-MM-YYYY)',
                   'Address', 'Math Grade', 'Literature Grade', 'English Grade']
         self.entries = {}
 
@@ -113,7 +113,7 @@ class MainWindow:
             item = self.tree.item(selected[0])
             values = item['values']
 
-            fields = ['Student ID', 'Last Name', 'First Name', 'DOB (YYYY-MM-DD)',
+            fields = ['Student ID', 'Last Name', 'First Name', 'DOB (DD-MM-YYYY)',
                       'Address', 'Math Grade', 'Literature Grade', 'English Grade']
 
             for i, field in enumerate(fields):
@@ -169,7 +169,7 @@ class MainWindow:
             self.entries['Student ID'].get().strip(),
             self.entries['Last Name'].get().strip(),
             self.entries['First Name'].get().strip(),
-            self.entries['DOB (YYYY-MM-DD)'].get().strip(),
+            self.entries['DOB (DD-MM-YYYY)'].get().strip(),
             self.entries['Address'].get().strip(),
             float(self.entries['Math Grade'].get().strip()) if self.entries['Math Grade'].get().strip() else None,
             float(self.entries['Literature Grade'].get().strip()) if self.entries[
